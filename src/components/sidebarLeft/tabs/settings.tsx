@@ -23,6 +23,7 @@ import {AccountAuthorizations, Authorization, ConnectedBot} from '@layer';
 import {attachClickEvent} from '@helpers/dom/clickEvent';
 import Section from '@components/section';
 import {AppStickersAndEmojiTab} from '@components/solidJsTabs/tabs';
+import {AppApexSettingsTab} from '@components/solidJsTabs/tabs';
 import showPremiumPopup, {showBusinessPopup} from '@components/popups/premium';
 import apiManagerProxy from '@lib/apiManagerProxy';
 import useStars, {hasTonTransactions} from '@stores/stars';
@@ -398,6 +399,10 @@ const Settings = () => {
               </Row>
             )}
           </For>
+          <Row clickable={() => tab.slider.createTab(AppApexSettingsTab).open()}>
+            <Row.Icon icon="star_filled" />
+            <Row.Title>ApexGram</Row.Title>
+          </Row>
           <Row clickable={onDevicesClick}>
             <Row.Icon icon="devices_filled" />
             <Row.Title titleRight={<span>{authCount()}</span>} titleRightSecondary>

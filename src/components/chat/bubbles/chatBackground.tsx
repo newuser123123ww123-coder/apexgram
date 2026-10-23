@@ -35,6 +35,7 @@ import {AppTheme} from '@config/state';
 import {appState} from '@stores/appState';
 import classNames from '@helpers/string/classNames';
 import noop from '@helpers/noop';
+import {initCustomWallpaper} from '@lib/customWallpaper';
 
 import styles from '@components/chat/bubbles/chatBackground.module.scss';
 
@@ -631,6 +632,9 @@ const appChatBackground = (() => {
         deferReveal={props().deferReveal}
       />
     ), element);
+
+    // CUSTOM: the photo picked with "Set as wallpaper" lies over the standard background layer
+    initCustomWallpaper(element);
   };
 
   const setBackground = (opts: {

@@ -189,6 +189,11 @@ class ApiUpdatesManager {
   }
 
   public processLocalUpdate(update: Update) {
+    // mark our own deletions, so they are not confused with deletions made by other people
+    if(update._ === 'updateDeleteMessages' || update._ === 'updateDeleteChannelMessages') {
+      (update as any).__localDelete = true;
+    }
+
     this.processUpdateMessage({
       _: 'updateShort',
       update

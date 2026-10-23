@@ -1,0 +1,408 @@
+diff --git a/src/components/chat/contextMenu.ts b/src/components/chat/contextMenu.ts
+index 7798745..cbc0213 100644
+--- a/src/components/chat/contextMenu.ts
++++ b/src/components/chat/contextMenu.ts
+@@ -6,6 +6,7 @@ import ButtonMenu, {ButtonMenuItemOptions, ButtonMenuItemOptionsVerifiable} from
+ import showDeleteMessagesPopup from '@components/popups/deleteMessages';
+ import showForwardPopup from '@components/popups/forward';
+ import showPinMessagePopup from '@components/popups/unpinMessage';
++import {getApexSetting} from '@lib/apexSettings';
+ import {copyTextToClipboard} from '@helpers/clipboard';
+ import showSendNowPopup from '@components/popups/sendNow';
+ import {toast, toastNew} from '@components/toast';
+@@ -1282,12 +1283,12 @@ export default class ChatContextMenu {
+       icon: 'image',
+       regularText: 'Установить как обои',
+       onClick: () => this.onSetWallpaperClick(),
+-      verify: () => !!this.getWallpaperMedia()
++      verify: () => getApexSetting('wallpaper') && !!this.getWallpaperMedia()
+     }, {
+       icon: 'undo',
+       regularText: 'Вернуть стандартные обои',
+       onClick: () => resetCustomWallpaper(),
+-      verify: () => hasCustomWallpaper() && !!this.getWallpaperMedia()
++      verify: () => getApexSetting('wallpaper') && hasCustomWallpaper() && !!this.getWallpaperMedia()
+     }, {
+       icon: 'note_filled',
+       text: 'SavedMusic.AddToProfile',
+diff --git a/src/components/chatTips/index.tsx b/src/components/chatTips/index.tsx
+index 2a00db5..768ac30 100644
+--- a/src/components/chatTips/index.tsx
++++ b/src/components/chatTips/index.tsx
+@@ -237,8 +237,8 @@ function ChatTipsDeck() {
+         aria-hidden={!hidden()}
+       >
+         {/* CUSTOM: the ApexGram logo and a thank-you line instead of the default hint */}
+-        <img class={styles.apexLogo} src="assets/img/apexgram.png" alt="ApexGram" draggable={false} />
+-        <span class={styles.selectChatPill}>Спасибо что используете ApexGram, мы вам благодарны!</span>
++        <img class={classNames(styles.apexLogo, 'apex-empty-logo')} src="assets/img/apexgram.png" alt="ApexGram" draggable={false} />
++        <span class={classNames(styles.selectChatPill, 'apex-empty-logo')}>Спасибо что используете ApexGram, мы вам благодарны!</span>
+       </div>
+     </div>
+   );
+diff --git a/src/components/generateTitleIcons.ts b/src/components/generateTitleIcons.ts
+index 05b9ee1..5574652 100644
+--- a/src/components/generateTitleIcons.ts
++++ b/src/components/generateTitleIcons.ts
+@@ -1,3 +1,4 @@
++import {getApexSetting} from '@lib/apexSettings';
+ import {attachClickEvent} from '@helpers/dom/clickEvent';
+ import {Chat, User} from '@layer';
+ import {i18n} from '@lib/langPack';
+@@ -104,7 +105,7 @@ export default async function generateTitleIcons({
+   }
+ 
+   // CUSTOM: the ApexGram star for the users of this client
+-  if(!noPremiumIcon && peerId.isUser()) {
++  if(!noPremiumIcon && peerId.isUser() && getApexSetting('star')) {
+     await loadApexUsers();
+     if(isApexUser(peerId)) {
+       const apexIcon = generateApexIcon();
+diff --git a/src/components/sidebarLeft/index.ts b/src/components/sidebarLeft/index.ts
+index 0901d44..6cd9001 100644
+--- a/src/components/sidebarLeft/index.ts
++++ b/src/components/sidebarLeft/index.ts
+@@ -1,3 +1,4 @@
++import '@lib/apexSettings';
+ import {createEffect, createRoot, createSignal, createUniqueId, on} from 'solid-js';
+ import appImManager from '@lib/appImManager';
+ import rootScope from '@lib/rootScope';
+diff --git a/src/components/sidebarLeft/tabs/apexSettings.tsx b/src/components/sidebarLeft/tabs/apexSettings.tsx
+new file mode 100644
+index 0000000..51eb602
+--- /dev/null
++++ b/src/components/sidebarLeft/tabs/apexSettings.tsx
+@@ -0,0 +1,75 @@
++import {createSignal, For, onMount} from 'solid-js';
++import CheckboxFieldTsx from '@components/checkboxFieldTsx';
++import Row from '@components/rowTsx';
++import Section from '@components/section';
++import {useSuperTab} from '@components/solidJsTabs/superTabProvider';
++import rootScope from '@lib/rootScope';
++import {ApexSettingKey, getApexSetting, setApexSetting} from '@lib/apexSettings';
++
++// CUSTOM: the "ApexGram" tab of the settings, which turns the added features on and off.
++const FEATURES: {key: ApexSettingKey, title: string, description: string}[] = [
++  {
++    key: 'keepDeleted',
++    title: 'Сохранять удалённые сообщения',
++    description: 'Сообщения, которые удалили другие, остаются в чате полупрозрачными с красной корзиной. Касается только новых удалений.'
++  },
++  {
++    key: 'readButtons',
++    title: 'Кнопки «Прочитать»',
++    description: 'Кнопки Все / Каналы / Группы под поиском чатов.'
++  },
++  {
++    key: 'wallpaper',
++    title: 'Свои обои из фото',
++    description: 'Пункт «Установить как обои» в меню фото и показ выбранного фото вместо обоев.'
++  },
++  {
++    key: 'star',
++    title: 'Звезда ApexGram',
++    description: 'Звезда рядом с именами пользователей этого клиента. После выключения или включения лучше перезагрузить страницу.'
++  },
++  {
++    key: 'emptyLogo',
++    title: 'Логотип на пустом экране',
++    description: 'Логотип ApexGram и благодарность, пока не выбран чат.'
++  }
++];
++
++const ApexSettingsTab = () => {
++  const [tab] = useSuperTab();
++
++  onMount(() => {
++    tab.title.replaceChildren('ApexGram');
++  });
++
++  const [values, setValues] = createSignal<Record<string, boolean>>(
++    Object.fromEntries(FEATURES.map((item) => [item.key, getApexSetting(item.key)]))
++  );
++
++  const onChange = (key: ApexSettingKey, value: boolean) => {
++    setValues({...values(), [key]: value});
++    setApexSetting(key, value, (all) => rootScope.managers.appMessagesManager.setApexSettings(all));
++  };
++
++  return (
++    <Section>
++      <For each={FEATURES}>
++        {(item) => (
++          <Row>
++            <Row.CheckboxFieldToggle>
++              <CheckboxFieldTsx
++                checked={values()[item.key]}
++                onChange={(value) => onChange(item.key, value)}
++                toggle
++              />
++            </Row.CheckboxFieldToggle>
++            <Row.Title>{item.title}</Row.Title>
++            <Row.Subtitle>{item.description}</Row.Subtitle>
++          </Row>
++        )}
++      </For>
++    </Section>
++  );
++};
++
++export default ApexSettingsTab;
+diff --git a/src/components/sidebarLeft/tabs/settings.tsx b/src/components/sidebarLeft/tabs/settings.tsx
+index 4384d88..d8877b2 100644
+--- a/src/components/sidebarLeft/tabs/settings.tsx
++++ b/src/components/sidebarLeft/tabs/settings.tsx
+@@ -23,6 +23,7 @@ import {AccountAuthorizations, Authorization, ConnectedBot} from '@layer';
+ import {attachClickEvent} from '@helpers/dom/clickEvent';
+ import Section from '@components/section';
+ import {AppStickersAndEmojiTab} from '@components/solidJsTabs/tabs';
++import {AppApexSettingsTab} from '@components/solidJsTabs/tabs';
+ import showPremiumPopup, {showBusinessPopup} from '@components/popups/premium';
+ import apiManagerProxy from '@lib/apiManagerProxy';
+ import useStars, {hasTonTransactions} from '@stores/stars';
+@@ -398,6 +399,10 @@ const Settings = () => {
+               </Row>
+             )}
+           </For>
++          <Row clickable={() => tab.slider.createTab(AppApexSettingsTab).open()}>
++            <Row.Icon icon="star_filled" />
++            <Row.Title>ApexGram</Row.Title>
++          </Row>
+           <Row clickable={onDevicesClick}>
+             <Row.Icon icon="devices_filled" />
+             <Row.Title titleRight={<span>{authCount()}</span>} titleRightSecondary>
+diff --git a/src/components/solidJsTabs/tabs.ts b/src/components/solidJsTabs/tabs.ts
+index 9da9246..4ebdfdc 100644
+--- a/src/components/solidJsTabs/tabs.ts
++++ b/src/components/solidJsTabs/tabs.ts
+@@ -328,6 +328,13 @@ export const AppNewCallTab =
+ (AppNewCallTab as any).noSame = true;
+ 
+ 
++export const AppApexSettingsTab =
++  scaffoldSolidJSTab({
++    title: 'Settings' as LangPackKey,
++    getComponentModule: () => import('../sidebarLeft/tabs/apexSettings')
++  });
++
++
+ export const AppPowerSavingTab =
+   scaffoldSolidJSTab({
+     title: 'LiteMode.Title',
+diff --git a/src/lib/apexSettings.ts b/src/lib/apexSettings.ts
+new file mode 100644
+index 0000000..574d987
+--- /dev/null
++++ b/src/lib/apexSettings.ts
+@@ -0,0 +1,147 @@
++/*
++ * CUSTOM: the switches of the ApexGram features (see the "ApexGram" tab in the settings).
++ *
++ * The page keeps them in localStorage (so they can be read at once, when the page starts).
++ * The worker, which keeps the deleted messages, has no localStorage, so the same values are
++ * also kept in its own tiny IndexedDB database, and the page tells the worker about a change.
++ * Every function is best-effort: on any error the feature just stays turned on.
++ */
++
++export type ApexSettingKey = 'keepDeleted' | 'readButtons' | 'wallpaper' | 'star' | 'emptyLogo';
++export type ApexSettings = Record<ApexSettingKey, boolean>;
++
++export const APEX_SETTING_KEYS: ApexSettingKey[] = ['keepDeleted', 'readButtons', 'wallpaper', 'star', 'emptyLogo'];
++
++const STORAGE_KEY = 'apexgram-settings';
++const DB_NAME = 'tweb-apexgram-settings';
++const STORE_NAME = 'settings';
++const RECORD_KEY = 'all';
++
++const settings: ApexSettings = {
++  keepDeleted: true,
++  readButtons: true,
++  wallpaper: true,
++  star: true,
++  emptyLogo: true
++};
++
++function merge(saved: any) {
++  if(!saved || typeof(saved) !== 'object') {
++    return;
++  }
++
++  APEX_SETTING_KEYS.forEach((key) => {
++    if(typeof(saved[key]) === 'boolean') {
++      settings[key] = saved[key];
++    }
++  });
++}
++
++// * the page: read what was saved
++try {
++  if(typeof(localStorage) !== 'undefined') {
++    merge(JSON.parse(localStorage.getItem(STORAGE_KEY)));
++  }
++} catch(err) {}
++
++export function getApexSetting(key: ApexSettingKey) {
++  return settings[key];
++}
++
++export function getApexSettings(): ApexSettings {
++  return {...settings};
++}
++
++function openDatabase() {
++  return new Promise<IDBDatabase>((resolve, reject) => {
++    const request = indexedDB.open(DB_NAME, 1);
++    request.onupgradeneeded = () => {
++      request.result.createObjectStore(STORE_NAME);
++    };
++    request.onsuccess = () => resolve(request.result);
++    request.onerror = () => reject(request.error);
++  });
++}
++
++async function writeToDatabase() {
++  const db = await openDatabase();
++  try {
++    await new Promise<void>((resolve, reject) => {
++      const transaction = db.transaction(STORE_NAME, 'readwrite');
++      transaction.objectStore(STORE_NAME).put({...settings}, RECORD_KEY);
++      transaction.oncomplete = () => resolve();
++      transaction.onerror = () => reject(transaction.error);
++      transaction.onabort = () => reject(transaction.error);
++    });
++  } finally {
++    db.close();
++  }
++}
++
++/**
++ * The worker calls it when it starts, to get the saved values.
++ */
++export async function loadApexSettingsFromDatabase() {
++  try {
++    const db = await openDatabase();
++    try {
++      const saved = await new Promise<any>((resolve, reject) => {
++        const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(RECORD_KEY);
++        request.onsuccess = () => resolve(request.result);
++        request.onerror = () => reject(request.error);
++      });
++      merge(saved);
++    } finally {
++      db.close();
++    }
++  } catch(err) {
++    console.warn('[apexgram] can not load the settings', err);
++  }
++}
++
++/**
++ * The worker calls it, when the page says that the values were changed.
++ */
++export function setApexSettingsFromPage(values: Partial<ApexSettings>) {
++  merge(values);
++}
++
++/**
++ * Switches the classes of the page, which show or hide the parts of the interface.
++ */
++export function applyApexSettingsToPage() {
++  if(typeof(document) === 'undefined') {
++    return;
++  }
++
++  const classList = document.documentElement.classList;
++  classList.toggle('apex-no-read-buttons', !settings.readButtons);
++  classList.toggle('apex-no-wallpaper', !settings.wallpaper);
++  classList.toggle('apex-no-star', !settings.star);
++  classList.toggle('apex-no-empty-logo', !settings.emptyLogo);
++}
++
++/**
++ * The page calls it from the settings tab.
++ */
++export function setApexSetting(key: ApexSettingKey, value: boolean, notifyWorker?: (values: ApexSettings) => any) {
++  settings[key] = value;
++
++  try {
++    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
++  } catch(err) {}
++
++  applyApexSettingsToPage();
++  writeToDatabase().catch((err) => console.warn('[apexgram] can not save the settings', err));
++
++  try {
++    const result = notifyWorker?.({...settings});
++    if(result && typeof(result.catch) === 'function') {
++      result.catch((err: any) => console.warn('[apexgram] the worker was not told', err));
++    }
++  } catch(err) {}
++
++  window.dispatchEvent(new CustomEvent('apexgram-settings', {detail: {key, value}}));
++}
++
++applyApexSettingsToPage();
+diff --git a/src/lib/appManagers/appMessagesManager.ts b/src/lib/appManagers/appMessagesManager.ts
+index 40fafdb..053aaec 100644
+--- a/src/lib/appManagers/appMessagesManager.ts
++++ b/src/lib/appManagers/appMessagesManager.ts
+@@ -20,6 +20,7 @@ import {ArgumentTypes, InvokeApiOptions, Modify} from '@types';
+ import {LogTypes} from '@lib/logger';
+ import {ReferenceBytes, ReferenceContext} from '@lib/storages/references';
+ import {forgetKeptDeletedMessages, getKeptDeletedMessages, keepDeletedMessage} from '@lib/storages/deletedMessages';
++import {getApexSetting, loadApexSettingsFromDatabase, setApexSettingsFromPage, type ApexSettings} from '@lib/apexSettings';
+ import {AnyDialog, FilterType, GLOBAL_FOLDER_ID} from '@lib/storages/dialogs';
+ import {ChatRights} from '@appManagers/appChatsManager';
+ import {MyDocument} from '@appManagers/appDocsManager';
+@@ -829,6 +830,9 @@ export class AppMessagesManager extends AppManager {
+   protected after() {
+     this.clear(true);
+ 
++    // * CUSTOM: the saved switches of the ApexGram features
++    loadApexSettingsFromDatabase();
++
+     this.rootScope.addEventListener('app_config', this.setStreamedMessageDraftTtl);
+     Promise.resolve(this.apiManager.getAppConfig()).then(this.setStreamedMessageDraftTtl, noop);
+ 
+@@ -12021,6 +12025,11 @@ export class AppMessagesManager extends AppManager {
+     const mids = update.messages.map((id) => this.appMessagesIdsManager.generateMessageId(id, channelId));
+     const peerId: PeerId = channelId ? channelId.toPeerId(true) : this.findPeerIdByMids(mids);
+ 
++    // * the feature is turned off in the settings
++    if(!getApexSetting('keepDeleted') && !(update as any).__localDelete) {
++      return this.onUpdateDeleteMessages(update);
++    }
++
+     if((update as any).__localDelete) {
+       // * we deleted it ourselves, so there is nothing to keep anymore
+       if(peerId) {
+@@ -12061,6 +12070,13 @@ export class AppMessagesManager extends AppManager {
+     }
+   };
+ 
++  /**
++   * CUSTOM: the page tells the new values of the ApexGram settings.
++   */
++  public setApexSettings(values: Partial<ApexSettings>) {
++    setApexSettingsFromPage(values);
++  }
++
+   /**
+    * CUSTOM: puts a message that was kept after a reload back to the memory.
+    */
+diff --git a/src/scss/base.scss b/src/scss/base.scss
+index 92707d9..f1fcb47 100644
+--- a/src/scss/base.scss
++++ b/src/scss/base.scss
+@@ -2622,3 +2622,11 @@ hr {
+   text-decoration: underline;
+   cursor: pointer;
+ }
++
++// CUSTOM: the switches of the ApexGram features (the classes are set by @lib/apexSettings)
++.apex-no-read-buttons .custom-read-buttons,
++.apex-no-wallpaper .custom-wallpaper,
++.apex-no-star .apex-icon,
++.apex-no-empty-logo .apex-empty-logo {
++  display: none !important;
++}

@@ -236,7 +236,9 @@ function ChatTipsDeck() {
         class={classNames(styles.selectChat, hidden() && styles.selectChatShown)}
         aria-hidden={!hidden()}
       >
-        <span class={styles.selectChatPill}>{i18n('EmptyPeer.Description')}</span>
+        {/* CUSTOM: the ApexGram logo and a thank-you line instead of the default hint */}
+        <img class={classNames(styles.apexLogo, 'apex-empty-logo')} src="assets/img/apexgram.png" alt="ApexGram" draggable={false} />
+        <span class={classNames(styles.selectChatPill, 'apex-empty-logo')}>Спасибо что используете ApexGram, мы вам благодарны!</span>
       </div>
     </div>
   );

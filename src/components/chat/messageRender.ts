@@ -328,6 +328,11 @@ export namespace MessageRender {
         args.unshift(i);
       }
 
+      // CUSTOM: the message was deleted by someone else, but we keep it
+      if((message as any).deletedByOther) {
+        args.unshift(Icon('delete_filled', 'time-icon', 'time-deleted', 'time-part'));
+      }
+
       if(message.effect) {
         effectSpan = makeEffect({onlyElement: true});
         args.push(effectSpan);

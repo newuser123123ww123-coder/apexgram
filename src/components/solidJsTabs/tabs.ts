@@ -328,6 +328,13 @@ export const AppNewCallTab =
 (AppNewCallTab as any).noSame = true;
 
 
+export const AppApexSettingsTab =
+  scaffoldSolidJSTab({
+    title: 'Settings' as LangPackKey,
+    getComponentModule: () => import('../sidebarLeft/tabs/apexSettings')
+  });
+
+
 export const AppPowerSavingTab =
   scaffoldSolidJSTab({
     title: 'LiteMode.Title',

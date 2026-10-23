@@ -6,9 +6,13 @@ import ButtonMenu, {ButtonMenuItemOptions, ButtonMenuItemOptionsVerifiable} from
 import showDeleteMessagesPopup from '@components/popups/deleteMessages';
 import showForwardPopup from '@components/popups/forward';
 import showPinMessagePopup from '@components/popups/unpinMessage';
+import {getApexSetting} from '@lib/apexSettings';
 import {copyTextToClipboard} from '@helpers/clipboard';
 import showSendNowPopup from '@components/popups/sendNow';
-import {toastNew} from '@components/toast';
+import {toast, toastNew} from '@components/toast';
+import choosePhotoSize from '@appManagers/utils/photos/choosePhotoSize';
+import IMAGE_MIME_TYPES_SUPPORTED from '@environment/imageMimeTypesSupport';
+import {hasCustomWallpaper, resetCustomWallpaper, setCustomWallpaper} from '@lib/customWallpaper';
 import I18n, {i18n, LangPackKey} from '@lib/langPack';
 import findUpClassName from '@helpers/dom/findUpClassName';
 import getSelectionElementFromTarget from '@components/chat/getSelectionElementFromTarget';
@@ -1275,6 +1279,17 @@ export default class ChatContextMenu {
           this.chat.container
         )
     }, {
+      // CUSTOM: the photo becomes the chat wallpaper
+      icon: 'image',
+      regularText: 'Установить как обои',
+      onClick: () => this.onSetWallpaperClick(),
+      verify: () => getApexSetting('wallpaper') && !!this.getWallpaperMedia()
+    }, {
+      icon: 'undo',
+      regularText: 'Вернуть стандартные обои',
+      onClick: () => resetCustomWallpaper(),
+      verify: () => getApexSetting('wallpaper') && hasCustomWallpaper() && !!this.getWallpaperMedia()
+    }, {
       icon: 'note_filled',
       text: 'SavedMusic.AddToProfile',
       onClick: () => addToProfileMusic(this.getSavedMusicDocId()),
@@ -1603,6 +1618,49 @@ export default class ChatContextMenu {
     return ButtonMenu({
       buttons: filteredButtons
     })
+  }
+
+  /** CUSTOM: the photo (or the image file) of the message, if it can be used as a wallpaper. */
+  private getWallpaperMedia(): Photo.photo | Document.document {
+    if(!this.message || this.richMedia) {
+      return;
+    }
+
+    const media = getMediaFromMessage(this.message, true);
+    if(!media) {
+      return;
+    }
+
+    // * an image sent as a file is fine too, but stickers are not
+    if(media._ === 'document' && (!IMAGE_MIME_TYPES_SUPPORTED.has(media.mime_type) || media.type === 'sticker')) {
+      return;
+    }
+
+    // * the same rules as for the "Download" button: protected content, the place of the click, etc.
+    if(!ChatContextMenu.canDownload(this.message, this.target, this.contentNoForwards, this.chat.container)) {
+      return;
+    }
+
+    return media;
+  }
+
+  private async onSetWallpaperClick() {
+    const media = this.getWallpaperMedia();
+    if(!media) {
+      return;
+    }
+
+    try {
+      const blob = await appDownloadManager.downloadMedia({
+        media,
+        thumb: media._ === 'photo' ? choosePhotoSize(media, Infinity, Infinity) : undefined
+      });
+      await setCustomWallpaper(blob);
+      toast('Обои установлены');
+    } catch(err) {
+      console.error('[custom-wallpaper]', err);
+      toast('Не удалось установить обои');
+    }
   }
 
   private getSavedMusicDocId() {

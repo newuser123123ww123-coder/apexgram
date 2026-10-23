@@ -2007,6 +2007,34 @@ export default class DialogsStorage extends AppManager {
     }
   }
 
+  /**
+   * CUSTOM: marks the unread chats of the main list and of the archive as read.
+   * `type` limits it to channels only or to groups only.
+   */
+  public async markAllAsReadByType(type: 'all' | 'channels' | 'groups') {
+    // * copy the ids first, because reading a chat changes the original sets
+    const peerIds = new Set<PeerId>();
+    [FOLDER_ID_ALL, FOLDER_ID_ARCHIVE].forEach((folderId) => {
+      const folder = this.getFolder(folderId);
+      folder?.unreadPeerIds.forEach((peerId) => peerIds.add(peerId));
+    });
+
+    for(const peerId of peerIds) {
+      if(
+        (type === 'channels' && !this.appPeersManager.isBroadcast(peerId)) ||
+        (type === 'groups' && !this.appPeersManager.isAnyGroup(peerId))
+      ) {
+        continue;
+      }
+
+      try {
+        await this.appMessagesManager.markDialogUnread({peerId, read: true});
+      } catch(err) {
+        // * one chat can fail, the others should still be read
+      }
+    }
+  }
+
   // * FORUMS SECTION
 
   public flushForumTopicsCache(peerId: PeerId) {

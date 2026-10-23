@@ -1,0 +1,19 @@
+diff --git a/src/scss/base.scss b/src/scss/base.scss
+index d92f653..92707d9 100644
+--- a/src/scss/base.scss
++++ b/src/scss/base.scss
+@@ -1704,6 +1704,14 @@ hr {
+   }
+ }
+ 
++// CUSTOM: the title of the ApexGram window is long, so it goes to the next line instead of being cut by "..."
++.popup-apex-info .popup-title,
++.popup-apex-info .popup-title * {
++  white-space: normal;
++  overflow: visible;
++  text-overflow: clip;
++}
++
+ .badge-fake {
+   flex: 0 0 auto;
+   color: var(--danger-color);

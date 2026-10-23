@@ -19,6 +19,8 @@ import type {InputRichMessage} from '@layer';
 import {ArgumentTypes, InvokeApiOptions, Modify} from '@types';
 import {LogTypes} from '@lib/logger';
 import {ReferenceBytes, ReferenceContext} from '@lib/storages/references';
+import {forgetKeptDeletedMessages, getKeptDeletedMessages, keepDeletedMessage} from '@lib/storages/deletedMessages';
+import {getApexSetting, loadApexSettingsFromDatabase, setApexSettingsFromPage, type ApexSettings} from '@lib/apexSettings';
 import {AnyDialog, FilterType, GLOBAL_FOLDER_ID} from '@lib/storages/dialogs';
 import {ChatRights} from '@appManagers/appChatsManager';
 import {MyDocument} from '@appManagers/appDocsManager';
@@ -828,6 +830,9 @@ export class AppMessagesManager extends AppManager {
   protected after() {
     this.clear(true);
 
+    // * CUSTOM: the saved switches of the ApexGram features
+    loadApexSettingsFromDatabase();
+
     this.rootScope.addEventListener('app_config', this.setStreamedMessageDraftTtl);
     Promise.resolve(this.apiManager.getAppConfig()).then(this.setStreamedMessageDraftTtl, noop);
 
@@ -863,8 +868,8 @@ export class AppMessagesManager extends AppManager {
 
       updateChannelAvailableMessages: this.onUpdateChannelAvailableMessages,
 
-      updateDeleteMessages: this.onUpdateDeleteMessages,
-      updateDeleteChannelMessages: this.onUpdateDeleteMessages,
+      updateDeleteMessages: this.onServerUpdateDeleteMessages,
+      updateDeleteChannelMessages: this.onServerUpdateDeleteMessages,
 
       updateNewEphemeralMessage: this.onUpdateNewEphemeralMessage,
       updateEditEphemeralMessage: this.onUpdateEditEphemeralMessage,
@@ -12009,6 +12014,170 @@ export class AppMessagesManager extends AppManager {
     if(fullChatChanged) this.rootScope.dispatchEvent('chat_full_update', channelId);
   }
 
+  /**
+   * CUSTOM: keep messages that were deleted by other people.
+   * Our own deletions (and internal calls) still go through onUpdateDeleteMessages.
+   */
+  private onServerUpdateDeleteMessages = (
+    update: Update.updateDeleteMessages | Update.updateDeleteChannelMessages
+  ) => {
+    const channelId = (update as Update.updateDeleteChannelMessages).channel_id;
+    const mids = update.messages.map((id) => this.appMessagesIdsManager.generateMessageId(id, channelId));
+    const peerId: PeerId = channelId ? channelId.toPeerId(true) : this.findPeerIdByMids(mids);
+
+    // * the feature is turned off in the settings
+    if(!getApexSetting('keepDeleted') && !(update as any).__localDelete) {
+      return this.onUpdateDeleteMessages(update);
+    }
+
+    if((update as any).__localDelete) {
+      // * we deleted it ourselves, so there is nothing to keep anymore
+      if(peerId) {
+        forgetKeptDeletedMessages(this.getAccountNumber(), peerId, mids);
+      }
+
+      return this.onUpdateDeleteMessages(update);
+    }
+
+    if(!peerId) {
+      return this.onUpdateDeleteMessages(update);
+    }
+
+    // * keep what can be kept, delete the rest in the usual way
+    const storage = this.getHistoryMessagesStorage(peerId);
+    const keptMids = new Set<number>();
+    for(const mid of mids) {
+      const message = this.getMessageByPeer(peerId, mid) as Message.message;
+      if(!message || message._ !== 'message' || this.isDeliveredEphemeralMessage(message)) {
+        continue;
+      }
+
+      keptMids.add(mid);
+      if((message as any).deletedByOther) {
+        continue;
+      }
+
+      (message as any).deletedByOther = true;
+      keepDeletedMessage(this.getAccountNumber(), peerId, message);
+      // * send the changed message to the page too, otherwise it keeps its old copy without the mark
+      this.setMessageToStorage(storage, message);
+      this.dispatchMessageEditEvent(message, storage.key);
+    }
+
+    const restIds = update.messages.filter((_, idx) => !keptMids.has(mids[idx]));
+    if(restIds.length) {
+      return this.onUpdateDeleteMessages({...update, messages: restIds} as typeof update);
+    }
+  };
+
+  /**
+   * CUSTOM: the page tells the new values of the ApexGram settings.
+   */
+  public setApexSettings(values: Partial<ApexSettings>) {
+    setApexSettingsFromPage(values);
+  }
+
+  /**
+   * CUSTOM: puts a message that was kept after a reload back to the memory.
+   */
+  private restoreKeptDeletedMessage(message: Message.message): Message.message {
+    (message as any).deletedByOther = true;
+
+    const peerId = message.peerId;
+    const storage = this.getHistoryMessagesStorage(peerId);
+    const existing = storage.get(message.mid);
+    if(existing) {
+      if(!(existing as any).deletedByOther) {
+        (existing as any).deletedByOther = true;
+        this.setMessageToStorage(storage, existing);
+      }
+
+      return existing as Message.message;
+    }
+
+    try {
+      this.saveMessageMedia(message, 'media', {
+        type: 'message',
+        peerId,
+        messageId: message.mid
+      });
+    } catch(err) {
+      this.log.error('can not restore media of a kept message', err);
+    }
+
+    if(message.grouped_id) {
+      const groupedStorage = this.groupedMessagesStorage[message.grouped_id] ??= this.createMessageStorage(peerId, 'grouped');
+      this.setMessageToStorage(groupedStorage, message);
+    }
+
+    this.setMessageToStorage(storage, message);
+    return message;
+  }
+
+  /**
+   * CUSTOM: adds the kept messages (deleted by other people) to the history that came from the server.
+   * It only touches the places that are surely covered by the loaded page, so no holes appear in the history.
+   */
+  private async injectKeptDeletedMessages(options: {
+    historyResult: Exclude<MessagesMessages, MessagesMessages.messagesMessagesNotModified>,
+    peerId: PeerId,
+    offsetId: number,
+    addOffset: number,
+    limit: number
+  }) {
+    const {historyResult, peerId, offsetId, addOffset, limit} = options;
+
+    try {
+      const kept: Message.message[] = await getKeptDeletedMessages(this.getAccountNumber(), peerId);
+      if(!kept.length) {
+        return historyResult;
+      }
+
+      const messages = historyResult.messages as Message.message[];
+      const loaded = messages.filter(Boolean);
+      if(!loaded.length) {
+        return historyResult;
+      }
+
+      const newest = loaded[0].mid;
+      const oldest = loaded[loaded.length - 1].mid;
+      const loadedMids = new Set(loaded.map((message) => message.mid));
+      const isBottomEdge = !offsetId;
+      const isTopEdge = addOffset >= 0 && messages.length < limit;
+
+      kept.sort((a, b) => b.mid - a.mid);
+      for(const keptMessage of kept) {
+        const mid = keptMessage?.mid;
+        if(
+          !mid ||
+          loadedMids.has(mid) ||
+          !(
+            (mid < newest && mid > oldest) ||
+            (isBottomEdge && mid > newest) ||
+            (isTopEdge && mid < oldest)
+          )
+        ) {
+          continue;
+        }
+
+        const restored = this.restoreKeptDeletedMessage(keptMessage);
+        let index = messages.findIndex((message) => message && message.mid < mid);
+        if(index === -1) {
+          index = messages.length;
+          // * the last item can be an empty placeholder, keep it last
+          if(index && !messages[index - 1]) --index;
+        }
+
+        messages.splice(index, 0, restored);
+        loadedMids.add(mid);
+      }
+    } catch(err) {
+      this.log.error('can not add kept deleted messages', err);
+    }
+
+    return historyResult;
+  }
+
   private onUpdateDeleteMessages = (
     update: Update.updateDeleteMessages | Update.updateDeleteChannelMessages,
     options: {
@@ -14078,6 +14247,11 @@ export class AppMessagesManager extends AppManager {
           messages.splice(length - 1, 1);
           length--;
           count--;
+        }
+
+        // * CUSTOM: bring back the messages that other people deleted
+        if(method === 'messages.getHistory' && peerId && length) {
+          return this.injectKeptDeletedMessages({historyResult, peerId, offsetId, addOffset, limit});
         }
 
         return historyResult;

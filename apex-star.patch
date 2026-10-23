@@ -1,0 +1,424 @@
+diff --git a/public/assets/img/apexgram-star.png b/public/assets/img/apexgram-star.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..59cb7066b8a1b8557bba21c665402285e010db46
+GIT binary patch
+literal 10312
+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
+GQU3$OQfiR^
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/components/generateApexIcon.ts b/src/components/generateApexIcon.ts
+new file mode 100644
+index 0000000..f44ab9f
+--- /dev/null
++++ b/src/components/generateApexIcon.ts
+@@ -0,0 +1,7 @@
++/** CUSTOM: the ApexGram star, which is shown next to the name of a user of this client. */
++export default function generateApexIcon() {
++  const span = document.createElement('span');
++  span.classList.add('apex-icon');
++  span.title = 'ApexGram';
++  return span;
++}
+diff --git a/src/components/generateTitleIcons.ts b/src/components/generateTitleIcons.ts
+index cca73cf..178f1e1 100644
+--- a/src/components/generateTitleIcons.ts
++++ b/src/components/generateTitleIcons.ts
+@@ -3,6 +3,8 @@ import {Chat, User} from '@layer';
+ import {i18n} from '@lib/langPack';
+ import apiManagerProxy from '@lib/apiManagerProxy';
+ import rootScope from '@lib/rootScope';
++import generateApexIcon from '@components/generateApexIcon';
++import {isApexUser, loadApexUsers} from '@lib/apexUsers';
+ import generateFakeIcon from '@components/generateFakeIcon';
+ import generatePremiumIcon from '@components/generatePremiumIcon';
+ import generateVerifiedIcon from '@components/generateVerifiedIcon';
+@@ -101,6 +103,14 @@ export default async function generateTitleIcons({
+     }
+   }
+ 
++  // CUSTOM: the ApexGram star for the users of this client
++  if(!noPremiumIcon && peerId.isUser()) {
++    await loadApexUsers();
++    if(isApexUser(peerId)) {
++      elements.push(generateApexIcon());
++    }
++  }
++
+   if((peer as Chat.channel).pFlags.verified && !noVerifiedIcon) {
+     elements.push(generateVerifiedIcon());
+   }
+diff --git a/src/lib/apexUsers.ts b/src/lib/apexUsers.ts
+new file mode 100644
+index 0000000..f5f5b30
+--- /dev/null
++++ b/src/lib/apexUsers.ts
+@@ -0,0 +1,89 @@
++/*
++ * CUSTOM: who gets the ApexGram star next to the name.
++ *
++ * Telegram has no way for one app to tell another one "I am being used", so this client does not
++ * guess and does not hide anything in the messages. The star is shown for:
++ *   1. you, always (you use this client);
++ *   2. the people from the public list of the client users: a small JSON file that you host
++ *      yourself (for example in the repository of the client on GitHub). People are added to it
++ *      by their own wish, and everybody can read it, so it is clear who is on it.
++ *   3. the ids that are written in APEX_LOCAL_USER_IDS below (handy for testing).
++ */
++import rootScope from '@lib/rootScope';
++
++/**
++ * Link to the JSON list of the users, for example
++ * 'https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/users.json'.
++ * The file may look like {"users": [123456789, 987654321]} or just [123456789, 987654321].
++ * While it is empty, only the star of the owner and APEX_LOCAL_USER_IDS are shown.
++ */
++export const APEX_USERS_URL = '';
++
++/** Telegram ids of the users that get the star without any list (numbers, not quotes). */
++export const APEX_LOCAL_USER_IDS: number[] = [];
++
++const CACHE_KEY = 'apexgram-users';
++const FETCH_TIMEOUT = 3000;
++
++const userIds = new Set<number>(APEX_LOCAL_USER_IDS);
++let loadPromise: Promise<void>;
++
++function parseIds(data: any): number[] {
++  const list = Array.isArray(data) ? data : data?.users;
++  if(!Array.isArray(list)) {
++    return [];
++  }
++
++  return list.map(Number).filter((id) => Number.isInteger(id) && id > 0);
++}
++
++function replaceIds(ids: number[]) {
++  userIds.clear();
++  APEX_LOCAL_USER_IDS.forEach((id) => userIds.add(id));
++  ids.forEach((id) => userIds.add(id));
++}
++
++async function load() {
++  // * the last known list, so the stars are there even before the answer of the network
++  try {
++    const cached = localStorage.getItem(CACHE_KEY);
++    if(cached) {
++      replaceIds(parseIds(JSON.parse(cached)));
++    }
++  } catch(err) {
++    // * the cache is optional
++  }
++
++  if(!APEX_USERS_URL) {
++    return;
++  }
++
++  try {
++    const controller = new AbortController();
++    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
++    const response = await fetch(APEX_USERS_URL, {cache: 'no-cache', signal: controller.signal});
++    clearTimeout(timer);
++    if(!response.ok) {
++      return;
++    }
++
++    const ids = parseIds(await response.json());
++    replaceIds(ids);
++    try {
++      localStorage.setItem(CACHE_KEY, JSON.stringify(ids));
++    } catch(err) {
++      // * the cache is optional
++    }
++  } catch(err) {
++    console.warn('[apexgram] can not load the list of the users', err);
++  }
++}
++
++/** Loads the list of the users once; it never fails and never waits for longer than a few seconds. */
++export function loadApexUsers() {
++  return loadPromise ??= load();
++}
++
++export function isApexUser(peerId: PeerId) {
++  return peerId === rootScope.myId || userIds.has(peerId);
++}
+diff --git a/src/scss/base.scss b/src/scss/base.scss
+index 8566f3b..db73c2c 100644
+--- a/src/scss/base.scss
++++ b/src/scss/base.scss
+@@ -1675,6 +1675,21 @@ hr {
+   };
+ }
+ 
++// CUSTOM: the ApexGram star. It is a mask, so it takes the color of the text around it,
++// the same way as the star of Telegram Premium does.
++.apex-icon {
++  flex: 0 0 auto;
++  display: inline-block;
++  align-self: center;
++  width: 1.125rem;
++  height: 1.125rem;
++  margin-inline-start: .25rem;
++  color: var(--primary-color);
++  background-color: currentColor;
++  -webkit-mask: url('/assets/img/apexgram-star.png') center / contain no-repeat;
++  mask: url('/assets/img/apexgram-star.png') center / contain no-repeat;
++}
++
+ .badge-fake {
+   flex: 0 0 auto;
+   color: var(--danger-color);
+diff --git a/src/scss/partials/_chatBubble.scss b/src/scss/partials/_chatBubble.scss
+index f21daa3..30f80d7 100644
+--- a/src/scss/partials/_chatBubble.scss
++++ b/src/scss/partials/_chatBubble.scss
+@@ -1699,6 +1699,7 @@
+     color: rgb(var(--peer-color-rgb)) !important;
+ 
+     .premium-icon,
++    .apex-icon,
+     .emoji-status-text-color {
+       opacity: .6;
+       color: inherit;
+diff --git a/src/scss/partials/_chatlist.scss b/src/scss/partials/_chatlist.scss
+index f61d6f5..5f6126a 100644
+--- a/src/scss/partials/_chatlist.scss
++++ b/src/scss/partials/_chatlist.scss
+@@ -374,6 +374,7 @@ ul.chatlist {
+         .user-title,
+         .message-status,
+         .premium-icon,
++        .apex-icon,
+         .verified-icon,
+         .sending-status-icon,
+         .dialog-subtitle-ico {
+diff --git a/src/scss/partials/_profile.scss b/src/scss/partials/_profile.scss
+index c03f2e2..139a1fc 100644
+--- a/src/scss/partials/_profile.scss
++++ b/src/scss/partials/_profile.scss
+@@ -292,6 +292,7 @@
+ 
+       .verified-icon,
+       .premium-icon,
++      .apex-icon,
+       .emoji-status-text-color {
+         opacity: var(--secondary-opacity-max);
+       }
+@@ -563,6 +564,7 @@
+       .profile-subtitle-text,
+       .verified-icon,
+       .premium-icon,
++      .apex-icon,
+       .emoji-status-text-color {
+         opacity: var(--secondary-opacity-max);
+       }
+@@ -610,7 +612,8 @@
+       }
+ 
+       .profile-avatars-container {
+-        .premium-icon {
++        .premium-icon,
++        .apex-icon {
+           color: #fff;
+         }
+ 

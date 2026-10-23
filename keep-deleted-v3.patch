@@ -1,0 +1,26 @@
+diff --git a/src/lib/appManagers/appMessagesManager.ts b/src/lib/appManagers/appMessagesManager.ts
+index f570a3b..40fafdb 100644
+--- a/src/lib/appManagers/appMessagesManager.ts
++++ b/src/lib/appManagers/appMessagesManager.ts
+@@ -12050,6 +12050,8 @@ export class AppMessagesManager extends AppManager {
+ 
+       (message as any).deletedByOther = true;
+       keepDeletedMessage(this.getAccountNumber(), peerId, message);
++      // * send the changed message to the page too, otherwise it keeps its old copy without the mark
++      this.setMessageToStorage(storage, message);
+       this.dispatchMessageEditEvent(message, storage.key);
+     }
+ 
+@@ -12069,7 +12071,11 @@ export class AppMessagesManager extends AppManager {
+     const storage = this.getHistoryMessagesStorage(peerId);
+     const existing = storage.get(message.mid);
+     if(existing) {
+-      (existing as any).deletedByOther = true;
++      if(!(existing as any).deletedByOther) {
++        (existing as any).deletedByOther = true;
++        this.setMessageToStorage(storage, existing);
++      }
++
+       return existing as Message.message;
+     }
+ 

@@ -1340,6 +1340,15 @@ export default class ChatBubbles {
       const bubble = this.getBubble(fullMid);
       if(!bubble) return;
 
+      // CUSTOM: mark the messages that other people deleted (we keep them in the chat)
+      const isDeletedByOther = !!(message as any).deletedByOther;
+      bubble.classList.toggle('is-deleted-by-other', isDeletedByOther);
+      if(isDeletedByOther && bubble.timeSpan && !bubble.querySelector('.time-deleted')) {
+        const timeSpan = bubble.timeSpan;
+        timeSpan.prepend(Icon('delete_filled', 'time-icon', 'time-deleted', 'time-part'));
+        timeSpan.querySelector('.time-inner')?.prepend(Icon('delete_filled', 'time-icon', 'time-deleted', 'time-part'));
+      }
+
       const updateLocalOnEdit = this.updateLocalOnEdit.get(bubble);
       let updatedLocally = false;
       if(updateLocalOnEdit) {
@@ -11174,6 +11183,7 @@ export default class ChatBubbles {
     }
 
     bubble.classList.add(isOut ? 'is-out' : 'is-in');
+    bubble.classList.toggle('is-deleted-by-other', !!(message as any).deletedByOther); // CUSTOM
 
     // * reserve room for the forced guest-bot avatar in 1-on-1 chats (group chats already indent)
     if(guestChatViaFromId) {

@@ -1,0 +1,130 @@
+diff --git a/src/components/sidebarLeft/index.ts b/src/components/sidebarLeft/index.ts
+index 3f5e843..0901d44 100644
+--- a/src/components/sidebarLeft/index.ts
++++ b/src/components/sidebarLeft/index.ts
+@@ -172,6 +172,36 @@ export class AppSidebarLeft extends SidebarSlider {
+     const sidebarHeader = this.sidebarEl.querySelector('.item-main .sidebar-header');
+     sidebarHeader.append(this.inputSearch.container);
+ 
++    // CUSTOM: buttons under the search line, which mark chats as read
++    const readButtonsRow = document.createElement('div');
++    readButtonsRow.classList.add('custom-read-buttons');
++    const readButtons: {type: 'all' | 'channels' | 'groups', text: string, title: string}[] = [
++      {type: 'all', text: 'Все', title: 'Прочитать все уведомления'},
++      {type: 'channels', text: 'Каналы', title: 'Прочитать уведомления только от каналов'},
++      {type: 'groups', text: 'Группы', title: 'Прочитать уведомления только от групп'}
++    ];
++    readButtons.forEach(({type, text, title}) => {
++      const button = document.createElement('button');
++      button.type = 'button';
++      button.classList.add('custom-read-button');
++      button.title = title;
++      button.setAttribute('aria-label', title);
++      button.append(Icon('checks', 'custom-read-button-icon'), text);
++      attachClickEvent(button, async() => {
++        if(button.disabled) return;
++        button.disabled = true;
++        try {
++          await this.managers.dialogsStorage.markAllAsReadByType(type);
++        } catch(err) {
++          console.error('[custom-read-buttons]', err);
++        }
++
++        button.disabled = false;
++      });
++      readButtonsRow.append(button);
++    });
++    sidebarHeader.after(readButtonsRow);
++
+     this.backBtn = this.sidebarEl.querySelector('.sidebar-back-button') as HTMLButtonElement;
+     this.backBtn.setAttribute('aria-label', I18n.format('StarsRating.Back', true));
+ 
+diff --git a/src/lib/storages/dialogs.ts b/src/lib/storages/dialogs.ts
+index ca303ec..84ad5e7 100644
+--- a/src/lib/storages/dialogs.ts
++++ b/src/lib/storages/dialogs.ts
+@@ -2007,6 +2007,34 @@ export default class DialogsStorage extends AppManager {
+     }
+   }
+ 
++  /**
++   * CUSTOM: marks the unread chats of the main list and of the archive as read.
++   * `type` limits it to channels only or to groups only.
++   */
++  public async markAllAsReadByType(type: 'all' | 'channels' | 'groups') {
++    // * copy the ids first, because reading a chat changes the original sets
++    const peerIds = new Set<PeerId>();
++    [FOLDER_ID_ALL, FOLDER_ID_ARCHIVE].forEach((folderId) => {
++      const folder = this.getFolder(folderId);
++      folder?.unreadPeerIds.forEach((peerId) => peerIds.add(peerId));
++    });
++
++    for(const peerId of peerIds) {
++      if(
++        (type === 'channels' && !this.appPeersManager.isBroadcast(peerId)) ||
++        (type === 'groups' && !this.appPeersManager.isAnyGroup(peerId))
++      ) {
++        continue;
++      }
++
++      try {
++        await this.appMessagesManager.markDialogUnread({peerId, read: true});
++      } catch(err) {
++        // * one chat can fail, the others should still be read
++      }
++    }
++  }
++
+   // * FORUMS SECTION
+ 
+   public flushForumTopicsCache(peerId: PeerId) {
+diff --git a/src/scss/partials/_leftSidebar.scss b/src/scss/partials/_leftSidebar.scss
+index 8637bb5..aa0a84e 100644
+--- a/src/scss/partials/_leftSidebar.scss
++++ b/src/scss/partials/_leftSidebar.scss
+@@ -1512,3 +1512,45 @@
+ #chats-archived-container {
+   background-color: var(--surface-color);
+ }
++
++// CUSTOM: the row of "mark as read" buttons under the search line
++.custom-read-buttons {
++  display: flex;
++  gap: .375rem;
++  flex: 0 0 auto;
++  padding: 0 .75rem .5rem;
++  background-color: var(--surface-color);
++}
++
++.custom-read-button {
++  display: flex;
++  flex: 1 1 0;
++  align-items: center;
++  justify-content: center;
++  gap: .25rem;
++  min-width: 0;
++  height: 2rem;
++  padding: 0 .5rem;
++  border: 0;
++  border-radius: .75rem;
++  background-color: var(--light-primary-color);
++  color: var(--primary-color);
++  font-size: .875rem;
++  font-weight: 500;
++  white-space: nowrap;
++  cursor: pointer;
++
++  &:hover:not(:disabled) {
++    opacity: .8;
++  }
++
++  &:disabled {
++    opacity: .5;
++    cursor: default;
++  }
++
++  &-icon {
++    flex: 0 0 auto;
++    font-size: 1.125rem;
++  }
++}

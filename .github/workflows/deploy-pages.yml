@@ -1,0 +1,58 @@
+# ApexGram: builds the client and publishes it to GitHub Pages on every push to main or master.
+name: Deploy ApexGram to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Own api_id / api_hash from https://my.telegram.org (repository secrets).
+      # Without them the values from the .env file of the project are used.
+      - name: Use own Telegram api_id and api_hash
+        env:
+          APEX_API_ID: ${{ secrets.APEX_API_ID }}
+          APEX_API_HASH: ${{ secrets.APEX_API_HASH }}
+        run: |
+          if [ -n "$APEX_API_ID" ] && [ -n "$APEX_API_HASH" ]; then
+            printf 'VITE_API_ID=%s\nVITE_API_HASH=%s\n' "$APEX_API_ID" "$APEX_API_HASH" > .env.local
+          fi
+
+      - run: pnpm exec vite build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

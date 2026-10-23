@@ -292,6 +292,7 @@
 
       .verified-icon,
       .premium-icon,
+      .apex-icon,
       .emoji-status-text-color {
         opacity: var(--secondary-opacity-max);
       }
@@ -563,6 +564,7 @@
       .profile-subtitle-text,
       .verified-icon,
       .premium-icon,
+      .apex-icon,
       .emoji-status-text-color {
         opacity: var(--secondary-opacity-max);
       }
@@ -610,7 +612,8 @@
       }
 
       .profile-avatars-container {
-        .premium-icon {
+        .premium-icon,
+        .apex-icon {
           color: #fff;
         }
 

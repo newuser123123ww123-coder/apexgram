@@ -1,3 +1,4 @@
+import '@lib/apexSettings';
 import {createEffect, createRoot, createSignal, createUniqueId, on} from 'solid-js';
 import appImManager from '@lib/appImManager';
 import rootScope from '@lib/rootScope';
@@ -171,6 +172,36 @@ export class AppSidebarLeft extends SidebarSlider {
     if(!Modes.a11y) (this.inputSearch.input as HTMLInputElement).placeholder = ' ';
     const sidebarHeader = this.sidebarEl.querySelector('.item-main .sidebar-header');
     sidebarHeader.append(this.inputSearch.container);
+
+    // CUSTOM: buttons under the search line, which mark chats as read
+    const readButtonsRow = document.createElement('div');
+    readButtonsRow.classList.add('custom-read-buttons');
+    const readButtons: {type: 'all' | 'channels' | 'groups', text: string, title: string}[] = [
+      {type: 'all', text: 'Все', title: 'Прочитать все уведомления'},
+      {type: 'channels', text: 'Каналы', title: 'Прочитать уведомления только от каналов'},
+      {type: 'groups', text: 'Группы', title: 'Прочитать уведомления только от групп'}
+    ];
+    readButtons.forEach(({type, text, title}) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.classList.add('custom-read-button');
+      button.title = title;
+      button.setAttribute('aria-label', title);
+      button.append(Icon('checks', 'custom-read-button-icon'), text);
+      attachClickEvent(button, async() => {
+        if(button.disabled) return;
+        button.disabled = true;
+        try {
+          await this.managers.dialogsStorage.markAllAsReadByType(type);
+        } catch(err) {
+          console.error('[custom-read-buttons]', err);
+        }
+
+        button.disabled = false;
+      });
+      readButtonsRow.append(button);
+    });
+    sidebarHeader.after(readButtonsRow);
 
     this.backBtn = this.sidebarEl.querySelector('.sidebar-back-button') as HTMLButtonElement;
     this.backBtn.setAttribute('aria-label', I18n.format('StarsRating.Back', true));

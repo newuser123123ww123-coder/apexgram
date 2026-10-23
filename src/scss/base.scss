@@ -1675,6 +1675,43 @@ hr {
   };
 }
 
+// CUSTOM: the ApexGram star. It is a mask, so it takes the color of the text around it,
+// the same way as the star of Telegram Premium does.
+.apex-icon {
+  flex: 0 0 auto;
+  display: inline-block;
+  align-self: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-inline-start: .25rem;
+  color: var(--primary-color);
+
+  // the star is drawn by the pseudo-element, so the mask does not cut the place
+  // that takes the clicks: the whole square of the icon is clickable
+  &:before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: currentColor;
+    -webkit-mask: url('/assets/img/apexgram-star.png') center / contain no-repeat;
+    mask: url('/assets/img/apexgram-star.png') center / contain no-repeat;
+  }
+
+  &.clickable {
+    pointer-events: all;
+    cursor: pointer;
+  }
+}
+
+// CUSTOM: the title of the ApexGram window is long, so it goes to the next line instead of being cut by "..."
+.popup-apex-info .popup-title,
+.popup-apex-info .popup-title * {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 .badge-fake {
   flex: 0 0 auto;
   color: var(--danger-color);
@@ -2584,4 +2621,12 @@ hr {
   color: var(--link-color);
   text-decoration: underline;
   cursor: pointer;
+}
+
+// CUSTOM: the switches of the ApexGram features (the classes are set by @lib/apexSettings)
+.apex-no-read-buttons .custom-read-buttons,
+.apex-no-wallpaper .custom-wallpaper,
+.apex-no-star .apex-icon,
+.apex-no-empty-logo .apex-empty-logo {
+  display: none !important;
 }

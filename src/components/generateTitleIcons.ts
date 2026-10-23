@@ -1,8 +1,11 @@
+import {getApexSetting} from '@lib/apexSettings';
 import {attachClickEvent} from '@helpers/dom/clickEvent';
 import {Chat, User} from '@layer';
 import {i18n} from '@lib/langPack';
 import apiManagerProxy from '@lib/apiManagerProxy';
 import rootScope from '@lib/rootScope';
+import generateApexIcon from '@components/generateApexIcon';
+import {isApexUser, loadApexUsers} from '@lib/apexUsers';
 import generateFakeIcon from '@components/generateFakeIcon';
 import generatePremiumIcon from '@components/generatePremiumIcon';
 import generateVerifiedIcon from '@components/generateVerifiedIcon';
@@ -98,6 +101,33 @@ export default async function generateTitleIcons({
       }
 
       elements.push(premiumIcon);
+    }
+  }
+
+  // CUSTOM: the ApexGram star for the users of this client
+  if(!noPremiumIcon && peerId.isUser() && getApexSetting('star')) {
+    await loadApexUsers();
+    if(isApexUser(peerId)) {
+      const apexIcon = generateApexIcon();
+
+      // * a click on the star tells what it is (clickable in the same places as the Premium star)
+      if(clickableEmojiStatus) {
+        apexIcon.classList.add('clickable');
+        const firstName = (peer as User.user).first_name;
+        const detach = attachClickEvent(apexIcon, (e) => {
+          e.stopPropagation();
+          // * the window is loaded only at the click, so its code does not take part in the start of the app
+          void import('@components/popups/apexInfo').then(({default: showApexInfoPopup}) => {
+            showApexInfoPopup(firstName);
+          }).catch((err) => {
+            console.error('[apexgram] popup failed', err);
+          });
+        });
+
+        wrapOptions?.middleware?.onDestroy(detach);
+      }
+
+      elements.push(apexIcon);
     }
   }
 

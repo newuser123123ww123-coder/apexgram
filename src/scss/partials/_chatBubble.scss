@@ -1699,6 +1699,7 @@
     color: rgb(var(--peer-color-rgb)) !important;
 
     .premium-icon,
+    .apex-icon,
     .emoji-status-text-color {
       opacity: .6;
       color: inherit;
@@ -4169,5 +4170,16 @@
     width: 200px;
     height: 200px;
     cursor: pointer;
+  }
+}
+
+// CUSTOM: a message that was deleted by someone else, but is kept in the chat
+.bubble.is-deleted-by-other {
+  .bubble-content-wrapper {
+    opacity: .55;
+  }
+
+  .time-deleted {
+    color: #e53935;
   }
 }
